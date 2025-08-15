@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Jadwal Operasi</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f4f4f4;
+    }
+    .tanggal {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    th, td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+    th {
+        background-color: #007bff;
+        color: white;
+    }
+    /* Warna baris sesuai status */
+    .status-dipanggil td { background-color: #fff3cd; } /* Kuning */
+    .status-berlangsung td { background-color: #d4edda; } /* Hijau */
+    .status-selesai td { background-color: #cce5ff; } /* Biru */
+    .status-tunda td, .status-batal td { background-color: #f8d7da; } /* Merah */
+</style>
+</head>
+<body>
+
+<div class="tanggal" id="tanggalDisplay"></div>
+
+<h2>Jadwal Operasi Ruang OT</h2>
+<table id="jadwalTable">
+    <thead>
+        <tr id="tableHeader"></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+</table>
+
+<script>
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS2eR2zNsiOXOo4YXJHX33P3yn3-RlIb3IW4_JRbm0HjzK0twgviBxWUgw89xG0bIltqH2nCa5_VC0k/pub?gid=0&single=true&output=csv";
+
+fetch(sheetURL)
+    .then(res => res.text())
+    .then(csv => {
+        const rows = csv.split("\n").map(r => r.split(","));
+        const headers = rows[0];
+        
+        const tanggalIndex = headers.indexOf("Tanggal");
+        const startCol = headers.indexOf("Jam");
+        const endCol = headers.indexOf("Status");
+
+        const headerIndexes = [];
+        for (let i = startCol; i <= endCol; i++) {
+            headerIndexes.push(i);
+        }
+
+        // Tampilkan tanggal di atas tabel
+        if (tanggalIndex !== -1 && rows.length > 1) {
+            document.getElementById("tanggalDisplay").textContent = "Tanggal: " + rows[1][tanggalIndex];
+        }
+
+        // Buat header tabel
+        const headerRow = document.getElementById("tableHeader");
+        headerIndexes.forEach(i => {
+            const th = document.createElement("th");
+            th.textContent = headers[i];
+            headerRow.appendChild(th);
+        });
+
+        // Buat body tabel
+        const tbody = document.getElementById("tableBody");
+        rows.slice(1).forEach(row => {
+            if (row.length < endCol + 1) return;
+            const tr = document.createElement("tr");
+
+            // Cek status untuk warna baris
+            const statusText = row[endCol].trim().toLowerCase();
+            if (statusText.includes("dipanggil")) tr.classList.add("status-dipanggil");
+            else if (statusText.includes("berlangsung")) tr.classList.add("status-berlangsung");
+            else if (statusText.includes("selesai")) tr.classList.add("status-selesai");
+            else if (statusText.includes("tunda") || statusText.includes("batal")) tr.classList.add("status-tunda");
+
+            // Tambahkan kolom sesuai range
+            headerIndexes.forEach(i => {
+                const td = document.createElement("td");
+                td.textContent = row[i];
+                tr.appendChild(td);
+            });
+
+            tbody.appendChild(tr);
+        });
+    });
+</script>
+
+</body>
+</html>
